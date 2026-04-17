@@ -1,7 +1,0 @@
-CREATE TABLE adresse (
-   adresse_id INT AUTO_INCREMENT PRIMARY KEY,
-   strasse VARCHAR(100) NOT NULL,
-   hausnr VARCHAR(10) NOT NULL,
-   plz VARCHAR(10) NOT NULL,
-   ort VARCHAR(100) NOT NULL
-);
