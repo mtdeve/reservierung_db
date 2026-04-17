@@ -1,4 +1,4 @@
-## License 📜
+## License
 
 This project is licensed under the **GNU GPLv3 License**.
 
@@ -9,3 +9,11 @@ If you use, modify, or distribute this code, you must:
 3. Keep the original copyright notice.
 
 See the [LICENSE](LICENSE) file for the full legal text.
+
+## Author
+
+**mtdeve**
+* [GitHub Profile](https://github.com/mtdeve)
+* [Email](mailto:mirkotardio@web.de)
+
+Feel free to contact me if you have any questions regarding this database schema!
