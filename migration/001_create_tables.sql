@@ -26,7 +26,7 @@ CREATE TABLE kunde (
     email VARCHAR(100) NOT NULL,
     telefon VARCHAR(20) NOT NULL,
     adresse_id INT NOT NULL,
-    CONSTRAINT fk_kunde_adresse -- Referentielle Integrität
+    CONSTRAINT fk_kunde_adresse -- Referentielle Integrität (ibfk_1 vermeidet)
         FOREIGN KEY (adresse_id) REFERENCES adresse (adresse_id) 
         ON DELETE RESTRICT -- Löschbeschränkung solange Abhängigkeiten existieren
 );
@@ -36,19 +36,30 @@ CREATE TABLE geraetetyp (
     geraetetyp_bezeichnung VARCHAR(100) NOT NULL,
     lieferpreis DECIMAL(10, 2) NOT NULL
 );
-CREATE TABLE geraet (
-    geraet_id INT AUTO_INCREMENT PRIMARY KEY,
-    geraete_nr VARCHAR(20) NOT NULL UNIQUE,
+CREATE TABLE geraet_modell (
+    geraet_modell_id INT AUTO_INCREMENT PRIMARY KEY,
     geraet_bezeichnung VARCHAR(100) NOT NULL,
     geraetetyp_id INT NOT NULL,
-    CONSTRAINT fk_geraet_typ -- Referentielle Integrität
+    CONSTRAINT fk_modell_typ -- Referentielle Integrität
         FOREIGN KEY (geraetetyp_id) REFERENCES geraetetyp (geraetetyp_id) 
         ON DELETE RESTRICT
+);
+CREATE TABLE geraet_item (
+    geraet_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    geraete_nr VARCHAR(20) NOT NULL UNIQUE,
+    sn_nr VARCHAR(100) NOT NULL UNIQUE,
+    item_zustand VARCHAR(20) NOT NULL DEFAULT 'verfügbar',
+    anschaffungsdatum DATE,
+    geraet_modell_id INT NOT NULL,
+    CONSTRAINT fk_item_modell -- Referentielle Integrität
+        FOREIGN KEY (geraet_modell_id) REFERENCES geraet_modell (geraet_modell_id) 
+        ON DELETE RESTRICT,
+    CONSTRAINT chk_item_zustand CHECK (item_zustand IN ('verfügbar', 'defekt', 'wartung', 'vermietet'))
 );
 CREATE TABLE reservierung (
     reservierung_id INT AUTO_INCREMENT PRIMARY KEY,
     reservierung_nr VARCHAR(20) NOT NULL UNIQUE,
-    datum DATE NOT NULL,
+    datum TIMESTAMP NOT NULL, -- Arbeitet mit UTC-Zeit, wie an anfangs besprochen (SET time_zone = '+00:00';)
     adresse_id INT NOT NULL,
     kunde_id INT NOT NULL,
     CONSTRAINT fk_res_adresse -- Referentielle Integrität
@@ -63,13 +74,13 @@ CREATE TABLE reservierungsposition (
     reservierungsposition_nr INT NOT NULL,
     pos_preis_pro_tag DECIMAL(10, 2) NOT NULL,
     pos_lieferpreis DECIMAL(10, 2) NOT NULL,
-    von_datum DATE NOT NULL,
+    von_datum DATE NOT NULL, -- Absoluter Datentyp für die Tagespreise
     bis_datum DATE NOT NULL,
-    geraet_id INT NOT NULL,
+    geraet_item_id INT NOT NULL,
     reservierung_id INT NOT NULL,
-    UNIQUE (reservierung_id, reservierungsposition_nr),
-    CONSTRAINT fk_respos_geraet -- Referentielle Integrität
-        FOREIGN KEY (geraet_id) REFERENCES geraet (geraet_id) 
+    UNIQUE (reservierung_id, reservierungsposition_nr), -- Zusammengesetzter Unique-Key
+    CONSTRAINT fk_respos_item -- Referentielle Integrität
+        FOREIGN KEY (geraet_item_id) REFERENCES geraet_item (geraet_item_id) 
         ON DELETE RESTRICT,
     CONSTRAINT fk_respos_res -- Referentielle Integrität
         FOREIGN KEY (reservierung_id) REFERENCES reservierung (reservierung_id) 
