@@ -10,6 +10,8 @@
 -- ZIELSETZUNG: Definition der Tabellenstrukturen und Relationen
 -- ============================================================
 USE reservierung_db;
+/*!40101 SET NAMES utf8mb4 */;
+
 CREATE TABLE adresse (
     adresse_id INT AUTO_INCREMENT PRIMARY KEY,
     strasse VARCHAR(100) NOT NULL,

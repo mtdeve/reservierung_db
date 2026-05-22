@@ -10,7 +10,12 @@
 -- ZIELSETZUNG: Datenintegrität (CHECK) und Performance (INDEX)
 -- ============================================================
 USE reservierung_db;
+/*!40101 SET NAMES utf8mb4 */;
+
 -- 1. Preis-Tabellen (keine negativen Werte)
+/*
+ * Constraints für Preise, um negative Werte zu verhindern.
+ */
 ALTER TABLE geraetetyp
 ADD CONSTRAINT chk_geraetetyp_preis CHECK (preis_pro_tag >= 0);
 
@@ -22,6 +27,9 @@ ADD CONSTRAINT chk_pos_preis CHECK (pos_preis_pro_tag >= 0);
 
 ALTER TABLE reservierungsposition
 ADD CONSTRAINT chk_pos_lieferpreis CHECK (pos_lieferpreis >= 0);
+
+ALTER TABLE reservierungsposition
+ADD CONSTRAINT chk_pos_nr CHECK (reservierungsposition_nr > 0);
 
 -- 2. Datumsangaben (zeitliche Konsistenz)
 ALTER TABLE reservierungsposition
@@ -50,12 +58,9 @@ ALTER TABLE kunde ADD CONSTRAINT uq_email UNIQUE (email);
 ALTER TABLE adresse
 ADD CONSTRAINT chk_plz_format CHECK (plz REGEXP '^[0-9]{5}$');
 
--- 5. Position (Nummerierung)
-ALTER TABLE reservierungsposition
-ADD CONSTRAINT chk_pos_nr CHECK (reservierungsposition_nr > 0);
 
 
--- 6. Performance-Optimierung (Indizes)
+-- 5. Performance-Optimierung (Indizes)
 CREATE INDEX idx_pos_zeitraum ON reservierungsposition (von_datum, bis_datum);
 
 CREATE INDEX idx_kunde_nachname ON kunde (nachname);

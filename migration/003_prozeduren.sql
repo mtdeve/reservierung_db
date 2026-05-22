@@ -11,9 +11,13 @@
 -- ============================================================
 
 USE reservierung_db;
+/*!40101 SET NAMES utf8mb4 */;
 
 DELIMITER //
 -- PROZEDUR:    pro_adresse_suchen_oder_anlegen
+-- BESCHREIBUNG: Sucht eine Adresse basierend auf den übergebenen Parametern.
+-- Wenn keine passende Adresse gefunden wird, wird eine neue Adresse angelegt und die ID zurückgegeben.
+-- Interne Verwnendung in anderen Prozeduren, um Redundanz zu vermeiden.
 -- ============================================================
 CREATE PROCEDURE pro_adresse_suchen_oder_anlegen(
     IN p_strasse VARCHAR(100),
@@ -56,6 +60,8 @@ END
 //
 
 -- PROZEDUR:    pro_kunde_mit_adresse_anlegen
+-- BESCHREIBUNG: Erstellt einen Kunden. Ruft zuerst die Adressprozedur auf.
+-- Eine Transaktion, zwei atomare Operationen.
 -- ============================================================
 CREATE PROCEDURE pro_kunde_mit_adresse_anlegen(
     -- Kundendaten
@@ -74,10 +80,10 @@ CREATE PROCEDURE pro_kunde_mit_adresse_anlegen(
 BEGIN
     DECLARE v_adr_id INT; -- Lokale Variable für die Adresse-ID
 
-    -- Atomare Transaktion:(ACID-Prinzip)
+    -- Atomare Transaktion:(ACID-Prinzip) 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
-        ROLLBACK;
+        ROLLBACK; 
         RESIGNAL;
     END;
 
@@ -95,6 +101,8 @@ END
 //
 
 -- PROZEDUR:    pro_reservierung_erstellen
+-- BESCHREIBUNG: Die Hauptprozedur. Findet ein verfügbares Item,
+-- erstellt die Reservierung und aktualisiert den Logistikstatus.
 -- ============================================================
 CREATE PROCEDURE pro_reservierung_erstellen(
     IN p_kunde_id INT,
@@ -134,8 +142,8 @@ BEGIN
         JOIN geraet_modell gm ON gi.geraet_modell_id = gm.geraet_modell_id
         JOIN geraetetyp gt ON gm.geraetetyp_id = gt.geraetetyp_id
         WHERE gi.geraet_modell_id = p_geraet_modell_id 
-          AND gi.item_zustand NOT IN ('defekt', 'wartung')  -- stato fisico
-          AND gi.geraet_item_id NOT IN (                    -- disponibilità temporale
+          AND gi.item_zustand NOT IN ('defekt', 'wartung')  -- Physischer Zustand
+          AND gi.geraet_item_id NOT IN (                    -- Zeitliche Verfügbarkeit
             SELECT rp.geraet_item_id
             FROM reservierungsposition rp
             WHERE rp.von_datum <= p_bis_datum              -- overlap check
