@@ -342,11 +342,12 @@ what to do with dependent data before deletion is allowed.
 
 ---
 
-### Planned
+### Future Direction
 | Topic | Description |
 |---|---|
 | English refactor | Full rename of all database objects to English in a dedicated commit |
 | Linux scripts | `.sh` equivalents of `.bat` scripts in `scripts/Linux/` |
 | Backend | REST API layer on top of the database |
 | Frontend | Availability calendar UI based on `fn_ist_item_verfuegbar` |
+| Documentation | Migrate to dbdocs.io or SchemaSpy for auto-generated database documentation |
 

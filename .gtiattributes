@@ -1,0 +1,3 @@
+*.sql linguist-detectable=true
+migration/**/*.sql linguist-detectable=true
+sql/**/*.sql linguist-detectable=true
