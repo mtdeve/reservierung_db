@@ -4,7 +4,77 @@
 
 ### Entity Relationship Diagram
 
-![ERD Physical Model](img/PhysischeModell_old.png)
+```mermaid
+erDiagram
+    adresse {
+        int adresse_id PK
+        varchar strasse
+        varchar haus_nr
+        varchar adresse_zusatz
+        varchar plz
+        varchar ort
+    }
+
+    kunde {
+        int kunde_id PK
+        varchar kunden_nr UK
+        varchar nachname
+        varchar vorname
+        varchar email
+        varchar telefon
+        int adresse_id FK
+    }
+
+    geraetetyp {
+        int geraetetyp_id PK
+        decimal preis_pro_tag
+        varchar geraetetyp_bezeichnung
+        decimal lieferpreis
+    }
+
+    geraet_modell {
+        int geraet_modell_id PK
+        varchar geraet_bezeichnung
+        int geraetetyp_id FK
+    }
+
+    geraet_item {
+        int geraet_item_id PK
+        varchar geraete_nr UK
+        varchar sn_nr UK
+        varchar item_zustand
+        date anschaffungsdatum
+        int geraet_modell_id FK
+    }
+
+    reservierung {
+        int reservierung_id PK
+        varchar reservierung_nr UK
+        timestamp datum
+        int adresse_id FK
+        int kunde_id FK
+    }
+
+    reservierungsposition {
+        int reservierungsposition_id PK
+        int reservierungsposition_nr
+        decimal pos_preis_pro_tag
+        decimal pos_lieferpreis
+        date von_datum
+        date bis_datum
+        int geraet_item_id FK
+        int reservierung_id FK
+    }
+
+    adresse ||--o{ kunde : belongs_to
+    adresse ||--o{ reservierung : used_as_delivery_address
+    kunde ||--o{ reservierung : places
+    reservierung ||--|{ reservierungsposition : contains_items
+    geraet_item ||--o{ reservierungsposition : is_assigned_to
+    geraet_modell ||--o{ geraet_item : defines_physical_item
+    geraetetyp ||--o{ geraet_modell : categorizes_model
+
+```
 
 ### Data Model Hierarchy
 
