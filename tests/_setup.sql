@@ -1,7 +1,7 @@
 -- ============================================================
--- PROJEKT:   Reservierung DB
--- VORAUSSETZUNG: seeds.sql wurde bereits ausgeführt
--- SETUP: IDs aus den Seeds holen (keine hardcodierten Werte)
+-- PROJECT:      Reservierung DB
+-- PREREQUISITE: seeds.sql must be executed beforehand
+-- SETUP:        Retrieve IDs dynamically from seeds (no hardcoded values)
 -- ============================================================
 USE reservierung_db;
 

@@ -6,6 +6,7 @@
 
 ```mermaid
 erDiagram
+    direction LR
     adresse {
         int adresse_id PK
         varchar strasse
@@ -400,13 +401,13 @@ what to do with dependent data before deletion is allowed.
 | `002_add_constraints.sql` | Data integrity checks and indexes |
 | `003_prozeduren.sql` | Stored procedures for business logic |
 | `004_functions.sql` | Reusable functions for calculations |
+| `005_views.sql` | Availability calendar and revenue reporting |
 
 ---
 
 ### In Progress
 | File | Description |
 |---|---|
-| `005_views.sql` | Availability calendar and revenue reporting |
 | `006_triggers.sql` | Automated validation and audit logging |
 | `007_access_control.sql` | RBAC — roles and permissions |
 

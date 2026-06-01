@@ -10,7 +10,7 @@
 -- Erst LT-002 für denselben Zeitraum wie TEST 1 belegen
 CALL pro_reservierung_erstellen(
     @kunde_2, @modell_macbook,
-    '2026-05-01', '2026-05-05',
+    '2029-05-01', '2029-05-05',
     'RES-T003A_test', 1,
     'Lieferweg_test', '55', NULL, '10785', 'Berlin'
 );

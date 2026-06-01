@@ -1,38 +1,41 @@
 @echo off
-:: Setzt die Konsole auf UTF-8
+:: Set console encoding to UTF-8
 chcp 65001 > nul
-:: Setzt das Arbeitsverzeichnis auf den Speicherort der .bat-Datei
+:: Set working directory to the location of this .bat file
 cd /d "%~dp0"
 
 SET DB=reservierung_db
 SET CNF="%~dp0mysql_credentials.cnf"
 SET MIGRATION_DIR="..\migration"
 
-:: Prüft ob die Konfigurationsdatei vorhanden ist
+:: Check if the configuration file exists
 IF NOT EXIST %CNF% (
-    echo [FEHLER] Konfigurationsdatei nicht gefunden: %CNF%
-    echo Kopiere mysql_credentials.cnf.example und benenne sie um.
+    echo [ERROR] Configuration file not found: %CNF%
+    echo Please copy mysql_credentials.cnf.example and rename it.
     pause
     exit /b 1
 )
 
-echo [START] Starte Datenbank-Setup aus: %CD%
+echo [START] Starting database setup from: %CD%
 
+:: Execute database migration files in sequential order
 mysql --defaults-file=%CNF% < "%MIGRATION_DIR%\000_create_database.sql"
 mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\001_create_tables.sql"
 mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\002_add_constraints.sql"
 mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\003_prozeduren.sql"
+mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\004_functions.sql"
+mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\005_views.sql"
 
 echo.
-SET /P SEED_CHOICE="Testdaten (Seeds) importieren? (y/n): "
+SET /P SEED_CHOICE="Import test data (Seeds)? (y/n): "
 
-:: Führt den Seed-Import bei Bestätigung aus
+:: Executes seed import upon user confirmation
 IF /I "%SEED_CHOICE%"=="y" (
     mysql --defaults-file=%CNF% %DB% < "..\sql\100_seeds.sql"
-    echo [INFO] Testdaten wurden importiert.
+    echo [INFO] Test data imported successfully.
 )
 
 echo.
-echo [FINISH] Setup abgeschlossen.
+echo [FINISH] Setup completed.
 cd ..
 pause

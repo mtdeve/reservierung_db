@@ -30,7 +30,7 @@ SELECT
     gm.geraet_bezeichnung,
     gi.geraet_item_id,
     gi.geraete_nr,
-    gi.item_zustand,
+    gi.item_zu stand,
     gt.preis_pro_tag,
     gt.lieferpreis
 FROM geraet_item gi

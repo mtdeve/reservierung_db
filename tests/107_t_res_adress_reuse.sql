@@ -8,7 +8,7 @@
 -- ============================================================
 CALL pro_reservierung_erstellen(
     @kunde_1, @modell_macbook,
-    '2026-08-01', '2026-08-05',
+    '2029-08-01', '2029-08-05',
     'RES-T008_test', 1,
     'Lieferweg_test', '55', NULL, '10785', 'Berlin'  -- selbe Adresse wie Seeds
 );
