@@ -5,9 +5,9 @@
  */
 
 -- ============================================================
--- SCRIPT:      003_prozeduren.sql
--- PROJECT:     Reservierung DB
--- OBJECTIVE:   Stored procedures for business logic
+-- SCRIPT:        003_procedures.sql
+-- PROJEkT:       Reservierung DB
+-- ZIELSETZUNG:   Gespeicherte Prozeduren (Stored Procedures) für die Businesslogik
 -- ============================================================
 
 USE reservierung_db;
@@ -15,10 +15,10 @@ USE reservierung_db;
 
 DELIMITER //
 -- ============================================================
--- PROCEDURE:   pro_adresse_suchen_oder_anlegen
--- DESCRIPTION: Searches for an address based on the provided parameters.
--- If no matching address is found, a new address is created and its ID is returned.
--- Used internally by other procedures to avoid data redundancy.
+-- PROZEDUR:     pro_adresse_suchen_oder_anlegen
+-- BESCHREIBUNG: Sucht nach einer Adresse basierend auf den übergebenen Parametern.
+--               Wenn keine passende Adresse gefunden wird, wird eine neue Adresse angelegt und deren ID zurückgegeben.
+--               Wird intern von anderen Prozeduren verwendet, um Datenredundanz zu vermeiden.
 -- ============================================================
 CREATE PROCEDURE pro_adresse_suchen_oder_anlegen(
     IN p_strasse VARCHAR(100),
@@ -31,15 +31,17 @@ CREATE PROCEDURE pro_adresse_suchen_oder_anlegen(
 BEGIN
     SET p_adr_id = NULL;
 
+    -- In "adresse_zusatz" NULL-Werte sind über den Operator <=> erlaubt
     SELECT adresse_id INTO p_adr_id 
     FROM adresse 
     WHERE strasse = p_strasse 
       AND haus_nr = p_haus_nr 
-      AND adresse_zusatz <=> p_zusatz -- NULLABLE is OK
+      AND adresse_zusatz <=> p_zusatz
       AND plz = p_plz 
       AND ort = p_ort
     LIMIT 1;
 
+    -- Wenn keine, "nur dann", Adresse einlegen 
     IF p_adr_id IS NULL THEN
         INSERT INTO adresse (
           strasse,
@@ -57,22 +59,20 @@ BEGIN
         
         SET p_adr_id = LAST_INSERT_ID();
     END IF;
-END
-//
+END //
 
 -- ============================================================
--- PROCEDURE:   pro_kunde_mit_adresse_anlegen
--- DESCRIPTION: Creates a customer profile. Calls the address procedure first.
--- Atomic transaction handling adhering to ACID principles.
+-- PROZEDUR:    pro_kunde_mit_adresse_anlegen
+-- BESCHREIBUNG: Erstellt ein Kundenprofil. Ruft zuerst die Adress-Prozedur auf.
 -- ============================================================
 CREATE PROCEDURE pro_kunde_mit_adresse_anlegen(
-    -- Customer data
+    -- Kundendaten
     IN p_kunden_nr VARCHAR(20),
     IN p_nname VARCHAR(100),
     IN p_vname VARCHAR(100),
     IN p_email VARCHAR(100),
     IN p_telefon VARCHAR(20),
-    -- Address data
+    -- Adressdaten
     IN p_strasse VARCHAR(100),
     IN p_haus_nr VARCHAR(10),
     IN p_zusatz VARCHAR(20),
@@ -80,32 +80,34 @@ CREATE PROCEDURE pro_kunde_mit_adresse_anlegen(
     IN p_ort VARCHAR(100)
 )
 BEGIN
-    DECLARE v_adr_id INT; -- Local variable for the address ID
+    -- Lokale Variable für die Adress-ID 
+    DECLARE v_adr_id INT;
 
-    -- Atomic Transaction handling (ACID principles)
+    -- Rollback-Behandlung wann notig: Atomare Transaktion (ACID-Prinzipien)
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK; 
+        -- Fehler weiterreichen über die Datenbankschnittstelle an den aufrufenden Client
+        -- (sei es die CLI, eine GUI wie MySQL Workbench oder eine Backend-Applikation)
         RESIGNAL;
     END;
 
     START TRANSACTION;
-        -- 1. Procedure call: Search for existing address or create a new one
+        -- 1. Prozeduraufruf: Nach bestehender Adresse suchen oder eine neue anlegen
         CALL pro_adresse_suchen_oder_anlegen(
           p_strasse, p_haus_nr, p_zusatz, p_plz, p_ort, v_adr_id
         );
 
-        -- 2. Create the customer record using the retrieved address ID
+        -- 2. Kundenbeleg unter Verwendung der abgerufenen Adress-ID erstellen
         INSERT INTO kunde (kunden_nr, nachname, vorname, email, telefon, adresse_id)
         VALUES (p_kunden_nr, p_nname, p_vname, p_email, p_telefon, v_adr_id);
     COMMIT;
-END
-//
+END //
 
 -- ============================================================
--- PROCEDURE:   pro_reservierung_erstellen
--- DESCRIPTION: Main booking procedure. Finds an available physical item,
--- creates the reservation, and updates the inventory logistics state.
+-- PROZEDUR:     pro_reservierung_erstellen
+-- BESCHREIBUNG: Hauptprozedur für Buchungen. Findet ein verfügbares physisches Exemplar,
+--               erstellt die Reservierung und aktualisiert den logistischen Zustand im Bestand.
 -- ============================================================
 CREATE PROCEDURE pro_reservierung_erstellen(
     IN p_kunde_id INT,
@@ -114,7 +116,7 @@ CREATE PROCEDURE pro_reservierung_erstellen(
     IN p_bis_datum DATE,
     IN p_res_nr VARCHAR(20),
     IN p_pos_nr INT,
-    -- Delivery address
+    -- Mögliche Lieferadresse (derzeit nicht verwendet) – Skalierbarkeit
     IN p_l_strasse VARCHAR(100),
     IN p_l_haus_nr VARCHAR(10),
     IN p_l_zusatz VARCHAR(20),
@@ -128,56 +130,60 @@ BEGIN
     DECLARE v_lieferpreis DECIMAL(10,2);
     DECLARE v_gewaehltes_item_id INT;
 
-    -- Rollback handling: Atomic Transaction (ACID principles)
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
         RESIGNAL;
     END;
 
-    -- Validation: start date cannot be in the past
+    -- Validierung: Startdatum darf nicht in der Vergangenheit liegen - erste niveau.
     IF p_von_datum < CURDATE() THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Start date cannot be in the past.';
+        SET MESSAGE_TEXT = 'Das startdatum darf nicht in der Vergangenheit sein.';
     END IF;
 
-    START TRANSACTION; -- Isolation constraint (ACID principles)
-        -- 1. Price determination based on device category
-        -- Pessimistic locking implementation (SELECT ... FOR UPDATE)
+    -- Isolationsstufe (ACID-Prinzip)
+    START TRANSACTION;
+        -- 1. Preisermittlung basierend auf der Gerätekategorie
+        -- Implementierung von pessimistischem Sperren (SELECT ... FOR UPDATE)
         SELECT gi.geraet_item_id, gt.preis_pro_tag, gt.lieferpreis 
         INTO v_gewaehltes_item_id, v_tagespreis, v_lieferpreis 
         FROM geraet_item gi
         JOIN geraet_modell gm ON gi.geraet_modell_id = gm.geraet_modell_id
         JOIN geraetetyp gt ON gm.geraetetyp_id = gt.geraetetyp_id
-        WHERE gi.geraet_modell_id = p_geraet_modell_id 
-          AND gi.item_zustand NOT IN ('defekt', 'wartung')  -- Physical availability check
-          AND gi.geraet_item_id NOT IN (                    -- Temporal overlap check
+        WHERE gi.geraet_modell_id = p_geraet_modell_id
+          -- Physische Verfügbarkeitsprüfung
+          AND gi.item_zustand NOT IN ('defekt', 'wartung')
+          -- Zeitliche Überschneidungsprüfung
+          AND gi.geraet_item_id NOT IN (
             SELECT rp.geraet_item_id
             FROM reservierungsposition rp
-            WHERE rp.von_datum <= p_bis_datum               -- Overlap verification logic
+            -- Validierungslogik für Überschneidungen (Overlap)
+            WHERE rp.von_datum <= p_bis_datum
               AND rp.bis_datum >= p_von_datum
           )
         LIMIT 1
-        FOR UPDATE; -- Row-level lock (Concurrency Theory)
+        -- Sperre auf Zeilenebene / Row-Level-Lock (Nebenläufigkeitstheorie)
+        FOR UPDATE;
 
-        -- 2. Safety guard: Abort execution if no stock item is available
+        -- Eine erste Schutzstufe, um Doppelbuchungen zu vermeiden
         IF v_gewaehltes_item_id IS NULL THEN
             SIGNAL SQLSTATE '45000' 
             SET MESSAGE_TEXT = 'Kein verfügbares Exemplar für dieses Modell gefunden.';
         END IF;
 
-        -- 3. Procedure call: Search or create delivery address
+        -- 3. Prozeduraufruf: Lieferadresse suchen oder anlegen
         CALL pro_adresse_suchen_oder_anlegen(
           p_l_strasse,
           p_l_haus_nr, p_l_zusatz, p_l_plz, p_l_ort, v_l_adr_id);
 
-        -- 4. Insert reservation record
+        -- 4. Reservierungsdatensatz einfügen
         INSERT INTO reservierung (reservierung_nr, datum, adresse_id, kunde_id)
         VALUES (p_res_nr, NOW(), v_l_adr_id, p_kunde_id);
         
         SET v_res_id = LAST_INSERT_ID();
 
-        -- 5. Insert reservation item line position
+        -- 5. Position der Reservierungszeile einfügen
         INSERT INTO reservierungsposition (
             reservierungsposition_nr, pos_preis_pro_tag, pos_lieferpreis, 
             von_datum, bis_datum, geraet_item_id, reservierung_id
@@ -186,13 +192,7 @@ BEGIN
             p_pos_nr, v_tagespreis, v_lieferpreis, 
             p_von_datum, p_bis_datum, v_gewaehltes_item_id, v_res_id
         );
-
-        -- 6. Update device state to rented (State pattern modification)
-        UPDATE geraet_item 
-        SET item_zustand = 'vermietet' 
-        WHERE geraet_item_id = v_gewaehltes_item_id;
     COMMIT;
-END
-//
+END //
 
 DELIMITER ;

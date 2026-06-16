@@ -2,8 +2,10 @@
 -- SKRIPT:    seeds.sql
 -- PROJEKT:   Reservierung DB
 -- ZWECK:     Reproduzierbare Testdaten für alle Szenarien
--- HINWEIS:   Alle Namen tragen das Suffix _test
---            Keine Session-Variablen — nur pure INSERT-Statements
+-- HINWEIS:   Die Daten in „seeds“ enthalten:
+--            - Gerätetyp,  - Gerätemodell, - Geräteartikel, - Adresse, - Kunde.
+--            Reservierungen sind aus Klarheitsgründen nicht in dieser Datei enthalten.
+--            Eventuelle Simulationen sind im Verzeichnis ./tests abzulegen, die aktuellen Reservierungen in einer separaten Datei.
 -- ============================================================
 USE reservierung_db;
 /*!40101 SET NAMES utf8mb4 */;
@@ -18,14 +20,16 @@ TRUNCATE TABLE kunde;
 TRUNCATE TABLE adresse;
 SET FOREIGN_KEY_CHECKS = 1;
 
+-- ============================================================
 -- 1. GERÄTETYPEN
 -- ============================================================
 INSERT INTO geraetetyp (geraetetyp_bezeichnung, preis_pro_tag, lieferpreis) VALUES
-('Laptop_test',  25.00, 10.00),   -- hat mehrere Items → Mehrfach-Item-Tests
-('Beamer_test',  18.50, 12.00),   -- hat nur ein Item  → Engpass-Test
-('Tablet_test',  15.00,  8.00),   -- hat gar kein Item → Modell-ohne-Item-Test
-('Drucker_test', 20.00, 15.00);   -- reserviert        → Overlap-Test
+('Laptop_test',  3.00, 1.00),   -- hat mehrere Items → Mehrfach-Item-Tests
+('Beamer_test',  4.00, 2.00),   -- hat nur ein Item  → Engpass-Test
+('Tablet_test',  2.00, 1.00),   -- hat gar kein Item → Modell-ohne-Item-Test
+('Drucker_test', 4.00, 2.00);   -- reserviert        → Overlap-Test
 
+-- ============================================================
 -- 2. GERÄTEMODELLE
 -- ============================================================
 INSERT INTO geraet_modell (geraet_bezeichnung, geraetetyp_id) VALUES
@@ -79,22 +83,3 @@ INSERT INTO kunde (kunden_nr, nachname, vorname, email, telefon, adresse_id) VAL
 ('K-003_test', 'Sample_test',   'Hans_test', 'hans_test@test.de',  '0401122334',
 (SELECT adresse_id FROM adresse WHERE strasse = 'Testallee_test'));
 
--- ============================================================
--- 6. VORHANDENE RESERVIERUNG (für Overlap-Test)
--- Drucker DR-001_test ist vom 01.05 bis 05.05 bereits gebucht
--- ============================================================
-INSERT INTO reservierung (reservierung_nr, datum, adresse_id, kunde_id) VALUES
-('RES-SEED-001_test', NOW(),
-    (SELECT adresse_id FROM adresse WHERE strasse = 'Lieferweg_test'),
-    (SELECT kunde_id   FROM kunde    WHERE kunden_nr = 'K-001_test')
-);
-
-INSERT INTO reservierungsposition (
-    reservierungsposition_nr, pos_preis_pro_tag, pos_lieferpreis,
-    von_datum, bis_datum, geraet_item_id, reservierung_id
-) VALUES (
-    1, 20.00, 15.00,
-    '2026-05-01', '2026-05-05',
-    (SELECT geraet_item_id FROM geraet_item WHERE geraete_nr = 'DR-001_test'),
-    (SELECT reservierung_id FROM reservierung WHERE reservierung_nr = 'RES-SEED-001_test')
-);

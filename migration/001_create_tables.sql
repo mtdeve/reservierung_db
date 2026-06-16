@@ -9,8 +9,31 @@
 -- PROJEKT:   Reservierung DB
 -- ZIELSETZUNG: Definition der Tabellenstrukturen und Relationen
 -- ============================================================
+-- ============================================================
+-- AUDIT-DATENBANK
+-- Separate Datenbank für DSGVO-konforme Protokollierung
+-- Wird NICHT gelöscht beim Zurücksetzen der Hauptdatenbank
+-- ============================================================
+USE reservierung_audit_db;
+/*!40101 SET NAMES utf8mb4 */; 
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    audit_id     INT AUTO_INCREMENT PRIMARY KEY,
+    tabelle      VARCHAR(50)  NOT NULL,             -- betroffene Tabelle
+    operation    VARCHAR(10)  NOT NULL,             -- INSERT, UPDATE oder DELETE
+    datensatz_id INT          NOT NULL,             -- ID des betroffenen Datensatzes
+    wert_vorher  TEXT,                              -- Wert vor der Änderung
+    wert_nachher TEXT,                              -- Wert nach der Änderung
+    benutzer     VARCHAR(100),                      -- angemeldeter Datenbankbenutzer
+    zeitstempel  TIMESTAMP    DEFAULT NOW()         -- Zeitpunkt der Änderung (UTC)
+);
+
+-- ============================================================
+-- HAUPTDATENBANK
+-- HINWEIS: "SIGNED" (als default) auf alle Werte stellen. Es vermeidet Kompatibilitätsprobleme 
+-- mit den Datenbanksystemen und frameworks. Es bleiben 2^31 Ziffern übrig.
+-- ============================================================
 USE reservierung_db;
-/*!40101 SET NAMES utf8mb4 */;
 
 CREATE TABLE adresse (
     adresse_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,9 +51,11 @@ CREATE TABLE kunde (
     email VARCHAR(100) NOT NULL,
     telefon VARCHAR(20) NOT NULL,
     adresse_id INT NOT NULL,
-    CONSTRAINT fk_kunde_adresse -- Referentielle Integrität (ibfk_1 vermeidet)
+    -- Referentielle Integrität - die automatische Benennung "ibfk_1" wird vermeidet durch die explizite Benennung der FK-Constraint.
+    -- ON DELETE RESTRICT - Löschbeschränkung solange Abhängigkeiten existieren 
+    CONSTRAINT fk_kunde_adresse
         FOREIGN KEY (adresse_id) REFERENCES adresse (adresse_id) 
-        ON DELETE RESTRICT -- Löschbeschränkung solange Abhängigkeiten existieren
+        ON DELETE RESTRICT 
 );
 CREATE TABLE geraetetyp (
     geraetetyp_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -42,7 +67,8 @@ CREATE TABLE geraet_modell (
     geraet_modell_id INT AUTO_INCREMENT PRIMARY KEY,
     geraet_bezeichnung VARCHAR(100) NOT NULL,
     geraetetyp_id INT NOT NULL,
-    CONSTRAINT fk_modell_typ -- Referentielle Integrität
+    -- Referentielle Integrität auch hier also als standartmäßige Praxis
+    CONSTRAINT fk_modell_typ
         FOREIGN KEY (geraetetyp_id) REFERENCES geraetetyp (geraetetyp_id) 
         ON DELETE RESTRICT
 );
@@ -53,7 +79,7 @@ CREATE TABLE geraet_item (
     item_zustand VARCHAR(20) NOT NULL DEFAULT 'verfügbar',
     anschaffungsdatum DATE,
     geraet_modell_id INT NOT NULL,
-    CONSTRAINT fk_item_modell -- Referentielle Integrität
+    CONSTRAINT fk_item_modell
         FOREIGN KEY (geraet_modell_id) REFERENCES geraet_modell (geraet_modell_id) 
         ON DELETE RESTRICT,
     CONSTRAINT chk_item_zustand CHECK (item_zustand IN ('verfügbar', 'defekt', 'wartung', 'vermietet'))
@@ -61,13 +87,14 @@ CREATE TABLE geraet_item (
 CREATE TABLE reservierung (
     reservierung_id INT AUTO_INCREMENT PRIMARY KEY,
     reservierung_nr VARCHAR(20) NOT NULL UNIQUE,
-    datum TIMESTAMP NOT NULL, -- Arbeitet mit UTC-Zeit, wie an anfangs besprochen (SET time_zone = '+00:00';)
+    -- Arbeitet mit UTC-Zeit, wie an anfangs besprochen (SET time_zone = '+00:00';)
+    datum TIMESTAMP NOT NULL,
     adresse_id INT NOT NULL,
     kunde_id INT NOT NULL,
-    CONSTRAINT fk_res_adresse -- Referentielle Integrität
+    CONSTRAINT fk_res_adresse
         FOREIGN KEY (adresse_id) REFERENCES adresse (adresse_id) 
         ON DELETE RESTRICT,
-    CONSTRAINT fk_res_kunde -- Referentielle Integrität
+    CONSTRAINT fk_res_kunde
         FOREIGN KEY (kunde_id) REFERENCES kunde (kunde_id) 
         ON DELETE RESTRICT
 );
@@ -75,16 +102,19 @@ CREATE TABLE reservierungsposition (
     reservierungsposition_id INT AUTO_INCREMENT PRIMARY KEY,
     reservierungsposition_nr INT NOT NULL,
     pos_preis_pro_tag DECIMAL(10, 2) NOT NULL,
+    -- Absoluter Datentyp für die Tagespreise
+    -- SIGNED (als default) Kompatibilitätsprobleme mit den Datenbanksystemen vermeidet; es bleiben 2^31 Ziffern übrig.
     pos_lieferpreis DECIMAL(10, 2) NOT NULL,
-    von_datum DATE NOT NULL, -- Absoluter Datentyp für die Tagespreise
+    von_datum DATE NOT NULL,
     bis_datum DATE NOT NULL,
     geraet_item_id INT NOT NULL,
     reservierung_id INT NOT NULL,
-    UNIQUE (reservierung_id, reservierungsposition_nr), -- Zusammengesetzter Unique-Key
-    CONSTRAINT fk_respos_item -- Referentielle Integrität
+    -- Zusammengesetzter Unique-Key
+    UNIQUE (reservierung_id, reservierungsposition_nr),
+    CONSTRAINT fk_respos_item
         FOREIGN KEY (geraet_item_id) REFERENCES geraet_item (geraet_item_id) 
         ON DELETE RESTRICT,
-    CONSTRAINT fk_respos_res -- Referentielle Integrität
+    CONSTRAINT fk_respos_res
         FOREIGN KEY (reservierung_id) REFERENCES reservierung (reservierung_id) 
         ON DELETE CASCADE 
 );

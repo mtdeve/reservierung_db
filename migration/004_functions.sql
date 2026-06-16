@@ -5,13 +5,14 @@
  */
 
 -- ============================================================
--- SKRIPT:    004_functions.sql
--- PROJEKT:   Reservierung DB
+-- SKRIPT:      004_functions.sql
+-- PROJEKT:     Reservierung DB
 -- ZIELSETZUNG: Gespeicherte Funktionen für wiederkehrende
---             Berechnungen und Verfügbarkeitsprüfungen
+--              Berechnungen und Verfügbarkeitsprüfungen
 -- ============================================================
 
 USE reservierung_db;
+/*!40101 SET NAMES utf8mb4 */;
 
 DELIMITER //
 
@@ -28,7 +29,7 @@ DELIMITER //
 --
 -- BEISPIEL:
 --   SELECT fn_calc_tage('2026-05-01', '2026-05-05');
---   → Ergebnis: 4 (01., 02., 03., 04. Mai — der 05. ist Rückgabetag)
+--   Ergebnis: 4 (01., 02., 03., 04. Mai — der 05. ist Rückgabetag)
 --
 -- HINWEIS:
 --   DATEDIFF(bis, von) berechnet die Differenz in Tagen.
@@ -41,7 +42,8 @@ CREATE FUNCTION fn_calc_tage(
     p_bis DATE
 )
 RETURNS INT
-DETERMINISTIC -- gleiche Daten - immer gleiche Anzahl Tage
+-- gleiche Daten - immer gleiche Anzahl Tage (query cache)
+DETERMINISTIC
 COMMENT 'Berechnet die Anzahl der Miettage zwischen zwei Datumsangaben'
 BEGIN
     -- Sicherheitsprüfung: Enddatum darf nicht vor Startdatum liegen.
@@ -56,7 +58,6 @@ BEGIN
     RETURN DATEDIFF(p_bis, p_von);
 END //
 
-
 -- ============================================================
 -- FUNKTION:  fn_calc_pos_gesamt
 -- ZWECK:     Berechnet den Gesamtpreis einer Reservierungsposition.
@@ -64,10 +65,10 @@ END //
 --            (Anzahl Miettage × Preis pro Tag) + Lieferpreis
 --
 -- PARAMETER:
---   p_von          DATE         → Startdatum
---   p_bis          DATE         → Enddatum
---   p_preis_pro_tag DECIMAL     → Tagespreis des Gerätetyps
---   p_lieferpreis  DECIMAL      → Lieferpreis des Gerätetyps
+--   p_von            DATE         → Startdatum
+--   p_bis            DATE         → Enddatum
+--   p_preis_pro_tag  DECIMAL     → Tagespreis des Gerätetyps
+--   p_lieferpreis    DECIMAL      → Lieferpreis des Gerätetyps
 --
 -- RÜCKGABE:  DECIMAL(10,2) → Gesamtbetrag in Euro
 --
@@ -88,8 +89,8 @@ CREATE FUNCTION fn_calc_pos_gesamt(
     p_lieferpreis   DECIMAL(10,2)
 )
 RETURNS DECIMAL(10,2)
-DETERMINISTIC -- gleiche Preise und Daten → immer gleicher Betrag
-COMMENT 'Berechnet den Gesamtpreis einer Position: (Tage × Tagespreis) + Lieferpreis'
+DETERMINISTIC
+COMMENT 'Gesamtpreis einer Position: (Tage × Tagespreis) + Lieferpreis'
 BEGIN
     -- Lokale Variable für die Anzahl der Miettage
     DECLARE v_tage INT;
@@ -103,57 +104,49 @@ END //
 
 
 -- ============================================================
--- FUNKTION:  fn_ist_item_verfuegbar
--- ZWECK:     Prüft ob ein konkretes Gerät (Item) für einen
---            gewünschten Zeitraum verfügbar ist.
---
---            Ein Item gilt als NICHT verfügbar wenn:
---            1. Sein physischer Zustand 'defekt' oder 'wartung' ist
---            2. Es im gewünschten Zeitraum bereits reserviert ist
+-- FUNKTION:    fn_ist_item_verfuegbar
+-- ZWECK:       Prüft ob ein konkretes Gerät (Item) für einen
+--              gewünschten Zeitraum verfügbar ist.
+--              Ein Item gilt als NICHT verfügbar wenn:
+--              1. Sein physischer Zustand 'defekt' oder 'wartung' ist
+--              2. Es im gewünschten Zeitraum bereits reserviert ist
 --               (Überschneidungslogik / Overlap-Prüfung)
---
--- PARAMETER:
---   p_item_id INT  → ID des zu prüfenden Geräts (geraet_item_id)
---   p_von     DATE → Gewünschtes Startdatum
---   p_bis     DATE → Gewünschtes Enddatum
---
--- RÜCKGABE:  TINYINT(1) → 1 = verfügbar / 0 = nicht verfügbar
---            (MySQL kennt keinen nativen BOOLEAN-Typ,
---             TINYINT(1) ist die standardkonforme Alternative)
---
+-- PARAMETER:   p_item_id INT  → ID des zu prüfenden Geräts (geraet_item_id)
+--              p_von     DATE → Gewünschtes Startdatum
+--              p_bis     DATE → Gewünschtes Enddatum
+-- RÜCKGABE:    TINYINT(1) → 1 = verfügbar / 0 = nicht verfügbar
+--              (MySQL kennt keinen nativen BOOLEAN-Typ,
+--              TINYINT(1) ist die standardkonforme Alternative)
 -- ÜBERSCHNEIDUNGSLOGIK (Overlap-Check):
---   Zwei Zeiträume überschneiden sich wenn:
---   bestehende Reservierung beginnt VOR Ende der neuen Anfrage
---   UND bestehende Reservierung endet NACH Beginn der neuen Anfrage
---
---   Visuell:
---   Bestehend:  |------A------|
---   Konflikt:         |------B------|  → B beginnt vor Ende von A
---   Kein Konflikt:                |--C--|  → C beginnt nach Ende von A
---
---   SQL-Bedingung: rp.von_datum <= p_bis AND rp.bis_datum >= p_von
---
--- VERWENDUNG:
---   Diese Funktion wird von Triggern und Views verwendet
---   um die Verfügbarkeitsprüfung zentral zu halten.
---
--- BEISPIEL:
---   SELECT fn_ist_item_verfuegbar(1, '2026-07-01', '2026-07-05');
---   → 1 (verfügbar) oder 0 (nicht verfügbar)
+--              Zwei Zeiträume überschneiden sich wenn:
+--              bestehende Reservierung beginnt VOR Ende der neuen Anfrage
+--              UND bestehende Reservierung endet NACH Beginn der neuen Anfrage
+--              Visuell:
+--              Bestehend:  |------A------|
+--              Konflikt:         |------B------|     → B beginnt vor Ende von A
+--              Kein Konflikt:               |--C--|  → C beginnt nach Ende von A
+-- SQL-Bedingung:
+--              rp.von_datum <= p_bis AND rp.bis_datum >= p_von
+-- VERWENDUNG:  Diese Funktion wird von Triggern und Views verwendet
+--              um die Verfügbarkeitsprüfung zentral zu halten.
+-- BEISPIEL:    SELECT fn_ist_item_verfuegbar(1, '2026-07-01', '2026-07-05');
+--              → 1 (verfügbar) oder 0 (nicht verfügbar)
 -- ============================================================
 CREATE FUNCTION fn_ist_item_verfuegbar(
     p_item_id INT,
     p_von     DATE,
     p_bis     DATE
 )
-RETURNS TINYINT   -- TINYINT(1) deprektiert, ab v8.0.19
-NOT DETERMINISTIC -- Ergebnis hängt vom aktuellen Datenbankinhalt ab
-                  -- dieselbe Anfrage kann morgen ein anderes Ergebnis
-                  -- liefern wenn zwischenzeitlich eine neue Reservierung
-                  -- eingetragen wurde
-READS SQL DATA    -- deklariert dass die Funktion nur liest (kein INSERT/UPDATE)
-                  -- ermöglicht MySQL interne Optimierungen
-COMMENT 'Gibt 1 zurück wenn das Item im Zeitraum verfügbar ist, sonst 0'
+-- TINYINT(1) deprektiert, ab v8.0.19
+RETURNS TINYINT  
+NOT DETERMINISTIC               -- Ergebnis hängt vom aktuellen Datenbankinhalt ab
+                                -- dieselbe Anfrage kann morgen ein anderes Ergebnis
+                                -- liefern wenn zwischenzeitlich eine neue Reservierung
+                                -- eingetragen wurde
+-- deklariert dass die Funktion nur liest (kein INSERT/UPDATE)
+-- ermöglicht MySQL interne Optimierungen (Ausführung und Query Cache)
+READS SQL DATA
+COMMENT '1 = verfügbar, 0 = nicht verfügbar'
 BEGIN
     DECLARE v_anzahl_konflikte INT;
 
@@ -165,13 +158,16 @@ BEGIN
     SELECT COUNT(*) INTO v_anzahl_konflikte
     FROM geraet_item gi
     LEFT JOIN reservierungsposition rp
+          -- Überschneidung: Beginn vor Ende der Anfrage
+          -- Überschneidung: Ende nach Beginn der Anfrage
           ON gi.geraet_item_id  = rp.geraet_item_id
-          AND rp.von_datum      <= p_bis   -- Überschneidung: Beginn vor Ende der Anfrage
-          AND rp.bis_datum      >= p_von   -- Überschneidung: Ende nach Beginn der Anfrage
+          AND rp.von_datum      <= p_bis
+          AND rp.bis_datum      >= p_von
     WHERE gi.geraet_item_id = p_item_id
+      -- physisch nicht verfügbar und zeitlich belegt
       AND (
-            gi.item_zustand IN ('defekt', 'wartung') -- physisch nicht verfügbar
-            OR rp.reservierungsposition_id IS NOT NULL -- zeitlich belegt
+            gi.item_zustand IN ('defekt', 'wartung')
+            OR rp.reservierungsposition_id IS NOT NULL
           );
 
     -- Wenn keine Konflikte gefunden wurden → verfügbar (1)

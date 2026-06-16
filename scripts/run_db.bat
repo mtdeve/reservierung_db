@@ -22,9 +22,11 @@ echo [START] Starting database setup from: %CD%
 mysql --defaults-file=%CNF% < "%MIGRATION_DIR%\000_create_database.sql"
 mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\001_create_tables.sql"
 mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\002_add_constraints.sql"
-mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\003_prozeduren.sql"
+mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\003_procedures.sql"
 mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\004_functions.sql"
 mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\005_views.sql"
+mysql --defaults-file=%CNF% %DB% < "%MIGRATION_DIR%\006_triggers.sql"
+
 
 echo.
 SET /P SEED_CHOICE="Import test data (Seeds)? (y/n): "

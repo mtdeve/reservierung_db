@@ -5,17 +5,16 @@
  */
 
 -- ============================================================
--- SKRIPT:    002_add_constraints.sql
--- PROJEKT:   Reservierung DB (SQL_pr_01)
--- ZIELSETZUNG: Datenintegrität (CHECK) und Performance (INDEX)
+-- SKRIPT:      002_add_constraints.sql
+-- PROJEKT:     Reservierung DB (SQL_pr_01)
+-- ZIELSETZUNG: Datenintegrität - Datenrichtigkeit (CHECK) (UNIQUE)
+--              und Performance (INDEX)-(UNIQUE)
 -- ============================================================
 USE reservierung_db;
 /*!40101 SET NAMES utf8mb4 */;
 
--- 1. Preis-Tabellen (keine negativen Werte)
-/*
- * Constraints für Preise, um negative Werte zu verhindern.
- */
+-- 1. Constraints für Preise, um negative Werte zu verhindern.
+-- Schutzmaßnahme für "SIGNED"-Werte:
 ALTER TABLE geraetetyp
 ADD CONSTRAINT chk_geraetetyp_preis CHECK (preis_pro_tag >= 0);
 
@@ -42,14 +41,8 @@ ADD CONSTRAINT chk_email_format CHECK (email LIKE '%@%.%');
 ALTER TABLE kunde
 ADD CONSTRAINT chk_telefon_length CHECK (CHAR_LENGTH(telefon) >= 6);
 
--- optional, aber empfohlen
-/*
- * DATENINTEGRITÄT: Verhindert Doubletten (schmutzige Daten) im System.
- * PERFORMANCE: Automatischer Index beschleunigt Login- und Suchanfragen erheblich.
- * DSGVO-COMPLIANCE (Art. 5 & 25): Gewährleistet Datenrichtigkeit und erleichtert 
- * Lösch- sowie Auskunftsanfragen (Privacy by Design).
- * SICHERHEIT: Schutz vor Bot-Registrierungen und Systemüberlastung durch Fake-Konten.
- */
+-- Verhindert Doubletten (schmutzige Daten) im System.
+-- Schutz vor Bot-Registrierungen und Systemüberlastung durch Fake-Konten.
 ALTER TABLE kunde ADD CONSTRAINT uq_email UNIQUE (email);
 
 -- 4. Adresse (Postleitzahl)
@@ -57,8 +50,6 @@ ALTER TABLE kunde ADD CONSTRAINT uq_email UNIQUE (email);
 -- (z.B. mit REGEXP '^[A-Z0-9 -]{2,10}$' für England = SW1A 1AA Niederlande = 1234 AB oder USA = 90210-1234)
 ALTER TABLE adresse
 ADD CONSTRAINT chk_plz_format CHECK (plz REGEXP '^[0-9]{5}$');
-
-
 
 -- 5. Performance-Optimierung (Indizes)
 CREATE INDEX idx_pos_zeitraum ON reservierungsposition (von_datum, bis_datum);

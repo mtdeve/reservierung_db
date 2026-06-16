@@ -5,23 +5,24 @@
  */
 
 -- ============================================================
--- SKRIPT:    005_views.sql
--- PROJEKT:   Reservierung DB
+-- SKRIPT:      005_views.sql
+-- PROJEKT:     Reservierung DB
 -- ZIELSETZUNG: Views für verschiedene Anwendungsfälle
 -- ============================================================
-
 USE reservierung_db;
+/*!40101 SET NAMES utf8mb4 */;
 
 -- ============================================================
---                                            OPERATIONAL VIEWS
+-- OPERATIONAL VIEWS
 -- ============================================================
 
 -- ============================================================
 -- VIEW:      view_verfuegbarkeit
--- ZWECK:     Zeigt für jedes Gerätemodell und jeden Zeitraum
---            ob ein konkretes Exemplar verfügbar ist.
+-- ZWECK:     Zeigt alle physisch verfügbaren Geräte
+--            (excludes defekt and wartung).
 --            Grundlage für den Verfügbarkeitskalender im Frontend.
--- VERWENDET: fn_ist_item_verfuegbar
+--            Temporale Verfügbarkeit wird durch fn_ist_item_verfuegbar
+--            auf Anwendungsebene geprüft.
 -- ============================================================
 CREATE VIEW view_verfuegbarkeit AS 
 SELECT
@@ -165,7 +166,7 @@ JOIN adresse a                 ON r.adresse_id        = a.adresse_id
 ORDER BY k.kunden_nr, r.datum DESC;
 
 -- ============================================================
---                                              REPORTING VIEWS
+-- REPORTING VIEWS
 -- ============================================================
 
 -- ============================================================
@@ -246,7 +247,7 @@ GROUP BY gt.geraetetyp_id, gt.geraetetyp_bezeichnung
 ORDER BY umsatz_gesamt DESC;
 
 -- ============================================================
---                                             ANALYTICAL VIEWS
+-- ANALYTICAL VIEWS
 -- ============================================================
 
 -- ============================================================
@@ -284,7 +285,7 @@ GROUP BY
 ORDER BY tage_gesamt DESC;
 
 -- ============================================================
---                                               SECURITY VIEWS
+-- SECURITY VIEWS
 -- ============================================================
 
 -- ============================================================

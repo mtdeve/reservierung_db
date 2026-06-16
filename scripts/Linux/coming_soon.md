@@ -1,0 +1,1 @@
+### Hier wird das Linux-Äquivalent zu den .bat-Dateien eingefügt.
