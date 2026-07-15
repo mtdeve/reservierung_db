@@ -1,0 +1,38 @@
+=== Ist-Analyse Abholung und Rückgabe
+---
+
+[plantuml, attivita-checkout, svg, align="center"]
+....
+@startuml
+start
+
+:Nach der Abholung abwarten;
+: Identität des Teilnehmers prüfen durch eingegebene Daten und Schulausweis;
+:Kumulatives Papierformular ausfüllen und unterschreiben lassen;
+:Excel-Datei aktualisieren;
+:Rechnung erstellen und bezahlen lassen;
+:Gerät ausgeben;
+
+:Nach der Rückgabe abwarten;
+
+if (Stimmt das geplante Datum mit dem Rückgabedatum?) then (ja)
+else (nein)
+  :Excel-Datei aktualisieren;
+  :Restbetrag berechnen;
+  :Rechnung erstellen und bezahlen lassen;
+endif
+
+:Gerät zurücknehmen und prüfen;
+
+if (Ist das Gerät in Ordnung?) then (ja)
+else (nein)
+  :Reparatur oder Ersatz organisieren;
+endif
+
+:Formular ausfüllen und unterschreiben lassen;
+:E-Mail mit Bestätigung schicken;
+:Verschiedene Excel-Tabellen aktualisieren;
+
+stop
+@enduml
+....

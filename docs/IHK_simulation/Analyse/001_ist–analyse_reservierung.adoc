@@ -1,0 +1,39 @@
+=== Ist-Analyse Reservierungsprozess
+---
+
+[plantuml, attivita-checkout, svg, align="center"]
+....
+@startuml
+start
+
+:Nach Anfrage abwarten;
+
+if (Email anfragen) then (ja)
+else (nein)
+  :Personliche Beratung anbieten;
+endif
+
+:Verfügbarkeit von geräten prüfen;
+
+repeat
+  if (Anfrage Zeitraum Verfügbar?) then (ja)
+  else (nein)
+    if (Kunde will eine alternative finden?) then (ja)
+    else (nein)
+      if (Anfrage wurde per email eingereicht?)
+        :email mit Absage senden;
+      endif
+      stop
+    endif
+    :Gefundenen Zeitraum anbieten;
+  endif
+repeat while (Akzeptiert der Kunde das gleiche Zeitraum?) is (nein)
+
+
+:Verschiedene Excel sheets aktualisieren;
+:Erste Teilnehmer Identität prüfen durch Schulsplatform und eingegebene Daten;
+:email mit reservierungsbestätigung senden;
+
+stop
+@enduml
+....

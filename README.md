@@ -28,7 +28,11 @@ If you use, modify, or distribute this code — including as a web service — y
 
 See the [LICENSE](LICENSE) file for the full legal text.
 
-## How to Run
+## Official documentation
+
+This file is intended as a small summary of the whole documentation on the start page. You don't need to download dependencies like AsciiDoctor, because I will provide PDF and HTML versions of everything.
+
+Consult the following link: [Official Documentation](*) to find out **how to run** it and all details of the project.
 
 ## Author
 

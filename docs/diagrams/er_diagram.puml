@@ -1,0 +1,128 @@
+@startuml ERDiagram
+top to bottom direction
+hide circle
+
+skinparam linetype ortho
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+skinparam entity {
+  BackgroundColor White
+  BorderColor Black
+}
+
+package "reservierung_audit_db" {
+  entity audit_log {
+    * audit_id : INT <<PK, AI>>
+    --
+    * tabelle : VARCHAR(50)
+    * operation : VARCHAR(10)
+    * datensatz_id : INT
+    wert_vorher : TEXT
+    wert_nachher : TEXT
+    benutzer : VARCHAR(100)
+    zeitstempel : TIMESTAMP = NOW()
+  }
+}
+
+package "reservierung_db" {
+  entity adresse {
+    * adresse_id : INT <<PK, AI>>
+    --
+    * strasse : VARCHAR(100)
+    * haus_nr : VARCHAR(10)
+    adresse_zusatz : VARCHAR(20)
+    * plz : VARCHAR(10)
+    * ort : VARCHAR(100)
+  }
+
+  entity kunde {
+    * kunde_id : INT <<PK, AI>>
+    --
+    * kunden_nr : VARCHAR(20) <<UK>>
+    * nachname : VARCHAR(100)
+    * vorname : VARCHAR(100)
+    * email : VARCHAR(100)
+    * telefon : VARCHAR(20)
+    * adresse_id : INT <<FK>>
+  }
+
+  entity geraetetyp {
+    * geraetetyp_id : INT <<PK, AI>>
+    --
+    * preis_pro_tag : DECIMAL(10, 2)
+    * geraetetyp_bezeichnung : VARCHAR(100)
+    * lieferpreis : DECIMAL(10, 2)
+  }
+
+  entity geraet_modell {
+    * geraet_modell_id : INT <<PK, AI>>
+    --
+    * geraet_bezeichnung : VARCHAR(100)
+    * geraetetyp_id : INT <<FK>>
+  }
+
+  entity geraet_item {
+    * geraet_item_id : INT <<PK, AI>>
+    --
+    * geraete_nr : VARCHAR(20) <<UK>>
+    * sn_nr : VARCHAR(100) <<UK>>
+    * item_zustand : VARCHAR(20) = 'verfügbar'
+    anschaffungsdatum : DATE
+    * geraet_modell_id : INT <<FK>>
+    --
+    CHECK item_zustand IN ('verfügbar', 'defekt', 'wartung', 'vermietet')
+  }
+
+  entity reservierung {
+    * reservierung_id : INT <<PK, AI>>
+    --
+    * reservierung_nr : VARCHAR(20) <<UK>>
+    * datum : TIMESTAMP
+    * adresse_id : INT <<FK>>
+    * kunde_id : INT <<FK>>
+  }
+
+  entity reservierungsposition {
+    * reservierungsposition_id : INT <<PK, AI>>
+    --
+    * reservierungsposition_nr : INT <<UK1>>
+    * pos_preis_pro_tag : DECIMAL(10, 2)
+    * pos_lieferpreis : DECIMAL(10, 2)
+    * von_datum : DATE
+    * bis_datum : DATE
+    * geraet_item_id : INT <<FK>>
+    * reservierung_id : INT <<FK, UK1>>
+    --
+    UNIQUE (reservierung_id, reservierungsposition_nr)
+  }
+}
+
+adresse "1" -- "N" kunde
+adresse "1" -- "N" reservierung
+kunde "1" -- "N" reservierung
+reservierung "1" -- "N" reservierungsposition
+geraet_item "1" -- "N" reservierungsposition
+geraet_modell "1" -- "N" geraet_item
+geraetetyp "1" -- "N" geraet_modell
+
+' Layout a tre colonne per la stampa su A4:
+' 1. indirizzi/clienti, 2. prenotazioni, 3. dispositivi.
+adresse -[hidden]right-> reservierung
+reservierung -[hidden]right-> geraetetyp
+adresse -[hidden]down-> kunde
+reservierung -[hidden]down-> reservierungsposition
+geraetetyp -[hidden]down-> geraet_modell
+geraet_modell -[hidden]down-> geraet_item
+kunde -[hidden]down-> audit_log
+
+legend bottom
+  * = NOT NULL
+  AI = AUTO_INCREMENT
+  PK = Primary Key
+  FK = Foreign Key
+  UK = Unique Key
+endlegend
+
+@enduml

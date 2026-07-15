@@ -62,8 +62,10 @@ BEGIN
 END //
 
 -- ============================================================
--- PROZEDUR:    pro_kunde_mit_adresse_anlegen
--- BESCHREIBUNG: Erstellt ein Kundenprofil. Ruft zuerst die Adress-Prozedur auf.
+-- PROZEDUR:      pro_kunde_mit_adresse_anlegen
+-- BESCHREIBUNG:  Erstellt ein Kundenprofil. Ruft zuerst die Adress-Prozedur auf.
+-- HINWEIS:       UNIQUE Constraint blockiert implizit Duplikate in (001_create_tables.sql).
+--                Zukünftige Validierung per SIGNAL SQLSTATE wird zur Optimierung empfohlen.
 -- ============================================================
 CREATE PROCEDURE pro_kunde_mit_adresse_anlegen(
     -- Kundendaten
@@ -115,13 +117,7 @@ CREATE PROCEDURE pro_reservierung_erstellen(
     IN p_von_datum DATE,
     IN p_bis_datum DATE,
     IN p_res_nr VARCHAR(20),
-    IN p_pos_nr INT,
-    -- Mögliche Lieferadresse (derzeit nicht verwendet) – Skalierbarkeit
-    IN p_l_strasse VARCHAR(100),
-    IN p_l_haus_nr VARCHAR(10),
-    IN p_l_zusatz VARCHAR(20),
-    IN p_l_plz VARCHAR(10),
-    IN p_l_ort VARCHAR(100)
+    IN p_pos_nr INT
 )
 BEGIN
     DECLARE v_l_adr_id INT;
@@ -144,6 +140,10 @@ BEGIN
 
     -- Isolationsstufe (ACID-Prinzip)
     START TRANSACTION;
+        -- Stammadresse des Kunden ermitteln
+        SELECT adresse_id INTO v_kunde_adr_id 
+        FROM kunde 
+        WHERE kunde_id = p_kunde_id;
         -- 1. Preisermittlung basierend auf der Gerätekategorie
         -- Implementierung von pessimistischem Sperren (SELECT ... FOR UPDATE)
         SELECT gi.geraet_item_id, gt.preis_pro_tag, gt.lieferpreis 
@@ -172,18 +172,13 @@ BEGIN
             SET MESSAGE_TEXT = 'Kein verfügbares Exemplar für dieses Modell gefunden.';
         END IF;
 
-        -- 3. Prozeduraufruf: Lieferadresse suchen oder anlegen
-        CALL pro_adresse_suchen_oder_anlegen(
-          p_l_strasse,
-          p_l_haus_nr, p_l_zusatz, p_l_plz, p_l_ort, v_l_adr_id);
-
-        -- 4. Reservierungsdatensatz einfügen
+        -- 2. Reservierungsdatensatz einfügen
         INSERT INTO reservierung (reservierung_nr, datum, adresse_id, kunde_id)
         VALUES (p_res_nr, NOW(), v_l_adr_id, p_kunde_id);
         
         SET v_res_id = LAST_INSERT_ID();
 
-        -- 5. Position der Reservierungszeile einfügen
+        -- 3. Position der Reservierungszeile einfügen
         INSERT INTO reservierungsposition (
             reservierungsposition_nr, pos_preis_pro_tag, pos_lieferpreis, 
             von_datum, bis_datum, geraet_item_id, reservierung_id

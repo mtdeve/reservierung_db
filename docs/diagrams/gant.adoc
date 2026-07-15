@@ -1,0 +1,58 @@
+= Zeitplan des Projekts
+
+== Gantt-Diagramm nach dem Projektantrag
+
+[plantuml, gantt-wasserfall, svg]
+....
+@startgantt
+Project starts 2026-03-02
+
+' Analysephase (7h)
+
+'Analysephase'
+[Durchführung der Ist-Analyse] starts 2026-03-02 and lasts 3 hours
+[Durchführung einer Wirtschaftlichkeitsanalyse] starts 2026-03-02 and lasts 1 hour
+[Ermittlung von Use-Cases] starts 2026-03-02 and lasts 1 hour
+[Lastenheft - Teil 1] starts 2026-03-02 and lasts 1 hour
+[Lastenheft - Teil 2] starts 2026-03-03 and lasts 1 hour
+
+'Entwurfsphase'
+[ER-Diagramm - Teil 1] starts 2026-03-03 and lasts 5 hours
+[ER-Diagramm - Teil 2] starts 2026-03-04 and lasts 2 hours
+[Physisches DB-Modell] starts 2026-03-04 and lasts 3 hours
+[API-Design - Teil 1] starts 2026-03-04 and lasts 1 hour
+[API-Design - Teil 2] starts 2026-03-05 and lasts 1 hour
+[Pflichtenheft] starts 2026-03-05 and lasts 3 hours
+
+'Realisierungsphase'
+[DB-Struktur - Teil 1] starts 2026-03-05 and lasts 2 hours
+[DB-Struktur - Teil 2] starts 2026-03-06 and lasts 2 hours
+[Stored Procedures - Teil 1] starts 2026-03-06 and lasts 4 hours
+[Stored Procedures - Teil 2] starts 2026-03-09 and lasts 6 hours
+[Stored Procedures - Teil 3] starts 2026-03-10 and lasts 1 hour
+[Views - Teil 1] starts 2026-03-10 and lasts 5 hours
+[Views - Teil 2] starts 2026-03-11 and lasts 1 hour
+[Trigger] starts 2026-03-11 and lasts 5 hours
+[Zugriffskontrolle] starts 2026-03-12 and lasts 5 hours
+[Spring Boot Config - Teil 1] starts 2026-03-12 and lasts 1 hour
+[Spring Boot Config - Teil 2] starts 2026-03-13 and lasts 1 hour
+[Java-Klassen - Teil 1] starts 2026-03-13 and lasts 5 hours
+[Java-Klassen - Teil 2] starts 2026-03-16 and lasts 1 hour
+[Testing] starts 2026-03-16 and lasts 3 hours
+
+'Validierungsphase'
+[Abnahme] starts 2026-03-16 and lasts 1 hour
+[Produktivschaltung - Teil 1] starts 2026-03-16 and lasts 1 hour
+[Produktivschaltung - Teil 2] starts 2026-03-17 and lasts 2 hours
+
+'Dokumentationsphase'
+[Projektdokumentation - Teil 1] starts 2026-03-17 and lasts 4 hours
+[Projektdokumentation - Teil 2] starts 2026-03-18 and lasts 4 hours
+[Testprotokolle - Teil 1] starts 2026-03-18 and lasts 2 hours
+[Testprotokolle - Teil 2] starts 2026-03-19 and lasts 1 hour
+[Auszüge aus dem Quellcode] starts 2026-03-19 and lasts 1 hour
+
+@endgantt
+....
+
+Die Aufgabenfolge orientiert sich an den Arbeitspaketen aus dem Projektantrag und zeigt die geplante Reihenfolge von Analyse, Umsetzung, Tests und Dokumentation.
