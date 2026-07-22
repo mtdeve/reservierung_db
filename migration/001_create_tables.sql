@@ -5,8 +5,8 @@
  */
 
 -- ============================================================
--- SKRIPT:    001_create_tables.sql
--- PROJEKT:   Reservierung DB
+-- SKRIPT:      001_create_tables.sql
+-- PROJEKT:     Reservierung DB
 -- ZIELSETZUNG: Definition der Tabellenstrukturen und Relationen
 -- ============================================================
 -- ============================================================
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     wert_nachher TEXT,                              -- Wert nach der Änderung
     benutzer     VARCHAR(100),                      -- angemeldeter Datenbankbenutzer
     zeitstempel  TIMESTAMP    DEFAULT NOW()         -- Zeitpunkt der Änderung (UTC)
-);
+) ENGINE=InnoDB;
 
 -- ============================================================
 -- HAUPTDATENBANK
@@ -42,7 +42,8 @@ CREATE TABLE adresse (
     adresse_zusatz VARCHAR(20),
     plz VARCHAR(10) NOT NULL,
     ort VARCHAR(100) NOT NULL
-);
+) ENGINE=InnoDB;
+
 CREATE TABLE kunde (
     kunde_id INT AUTO_INCREMENT PRIMARY KEY,
     kunden_nr VARCHAR(20) NOT NULL UNIQUE,
@@ -56,13 +57,14 @@ CREATE TABLE kunde (
     CONSTRAINT fk_kunde_adresse
         FOREIGN KEY (adresse_id) REFERENCES adresse (adresse_id) 
         ON DELETE RESTRICT 
-);
+) ENGINE=InnoDB;
+
 CREATE TABLE geraetetyp (
     geraetetyp_id INT AUTO_INCREMENT PRIMARY KEY,
     preis_pro_tag DECIMAL(10, 2) NOT NULL,
-    geraetetyp_bezeichnung VARCHAR(100) NOT NULL,
-    lieferpreis DECIMAL(10, 2) NOT NULL
-);
+    geraetetyp_bezeichnung VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE geraet_modell (
     geraet_modell_id INT AUTO_INCREMENT PRIMARY KEY,
     geraet_bezeichnung VARCHAR(100) NOT NULL,
@@ -71,7 +73,8 @@ CREATE TABLE geraet_modell (
     CONSTRAINT fk_modell_typ
         FOREIGN KEY (geraetetyp_id) REFERENCES geraetetyp (geraetetyp_id) 
         ON DELETE RESTRICT
-);
+) ENGINE=InnoDB;
+
 CREATE TABLE geraet_item (
     geraet_item_id INT AUTO_INCREMENT PRIMARY KEY,
     geraete_nr VARCHAR(20) NOT NULL UNIQUE,
@@ -83,10 +86,12 @@ CREATE TABLE geraet_item (
         FOREIGN KEY (geraet_modell_id) REFERENCES geraet_modell (geraet_modell_id) 
         ON DELETE RESTRICT,
     CONSTRAINT chk_item_zustand CHECK (item_zustand IN ('verfügbar', 'defekt', 'wartung', 'vermietet'))
-);
+) ENGINE=InnoDB;
+
 CREATE TABLE reservierung (
     reservierung_id INT AUTO_INCREMENT PRIMARY KEY,
     reservierung_nr VARCHAR(20) NOT NULL UNIQUE,
+    reservierung_hash VARCHAR(64) NOT NULL UNIQUE,
     -- Arbeitet mit UTC-Zeit, wie an anfangs besprochen (SET time_zone = '+00:00';)
     datum TIMESTAMP NOT NULL,
     adresse_id INT NOT NULL,
@@ -97,24 +102,24 @@ CREATE TABLE reservierung (
     CONSTRAINT fk_res_kunde
         FOREIGN KEY (kunde_id) REFERENCES kunde (kunde_id) 
         ON DELETE RESTRICT
-);
-CREATE TABLE reservierungsposition (
-    reservierungsposition_id INT AUTO_INCREMENT PRIMARY KEY,
-    reservierungsposition_nr INT NOT NULL,
+) ENGINE=InnoDB;
+
+CREATE TABLE position (
+    position_id INT AUTO_INCREMENT PRIMARY KEY,
+    position_nr INT NOT NULL UNIQUE,
     pos_preis_pro_tag DECIMAL(10, 2) NOT NULL,
     -- Absoluter Datentyp für die Tagespreise
     -- SIGNED (als default) Kompatibilitätsprobleme mit den Datenbanksystemen vermeidet; es bleiben 2^31 Ziffern übrig.
-    pos_lieferpreis DECIMAL(10, 2) NOT NULL,
     von_datum DATE NOT NULL,
     bis_datum DATE NOT NULL,
     geraet_item_id INT NOT NULL,
     reservierung_id INT NOT NULL,
     -- Zusammengesetzter Unique-Key
-    UNIQUE (reservierung_id, reservierungsposition_nr),
+    UNIQUE (reservierung_id, position_nr),
     CONSTRAINT fk_respos_item
         FOREIGN KEY (geraet_item_id) REFERENCES geraet_item (geraet_item_id) 
         ON DELETE RESTRICT,
     CONSTRAINT fk_respos_res
         FOREIGN KEY (reservierung_id) REFERENCES reservierung (reservierung_id) 
         ON DELETE CASCADE 
-);
+) ENGINE=InnoDB;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 Il mtdeve
+ * Copyright (C) 2026 mtdeve
  * This project is licensed under the GNU Affero General Public License v3.0.
  * See the LICENSE file in the project root for more information.
  */
@@ -17,7 +17,7 @@ CREATE DATABASE reservierung_db;
 USE reservierung_db;
 /*!40101 SET NAMES utf8mb4 */; 
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";        -- Falls man 0 bei ID nutzen will
 SET time_zone = "+00:00";
 
 -- ============================================================
