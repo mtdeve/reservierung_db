@@ -19,14 +19,14 @@ USE reservierung_audit_db;
 
 CREATE TABLE IF NOT EXISTS audit_log (
     audit_id     INT AUTO_INCREMENT PRIMARY KEY,
-    tabelle      VARCHAR(50)  NOT NULL,             -- betroffene Tabelle
+    tabelle      VARCHAR(64)  NOT NULL,             -- betroffene Tabelle
     operation    VARCHAR(10)  NOT NULL,             -- INSERT, UPDATE oder DELETE
     datensatz_id INT          NOT NULL,             -- ID des betroffenen Datensatzes
     wert_vorher  TEXT,                              -- Wert vor der Änderung
     wert_nachher TEXT,                              -- Wert nach der Änderung
-    benutzer     VARCHAR(100),                      -- angemeldeter Datenbankbenutzer
+    benutzer     VARCHAR(64),                      -- angemeldeter Datenbankbenutzer
     zeitstempel  TIMESTAMP    DEFAULT NOW()         -- Zeitpunkt der Änderung (UTC)
-) ENGINE=InnoDB;
+);
 
 -- ============================================================
 -- HAUPTDATENBANK
@@ -37,19 +37,19 @@ USE reservierung_db;
 
 CREATE TABLE adresse (
     adresse_id INT AUTO_INCREMENT PRIMARY KEY,
-    strasse VARCHAR(100) NOT NULL,
+    strasse VARCHAR(64) NOT NULL,
     haus_nr VARCHAR(10) NOT NULL,
     adresse_zusatz VARCHAR(20),
     plz VARCHAR(10) NOT NULL,
-    ort VARCHAR(100) NOT NULL
-) ENGINE=InnoDB;
+    ort VARCHAR(64) NOT NULL
+);
 
 CREATE TABLE kunde (
     kunde_id INT AUTO_INCREMENT PRIMARY KEY,
     kunden_nr VARCHAR(20) NOT NULL UNIQUE,
-    nachname VARCHAR(100) NOT NULL,
-    vorname VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
+    nachname VARCHAR(64) NOT NULL,
+    vorname VARCHAR(64) NOT NULL,
+    email VARCHAR(254) NOT NULL,
     telefon VARCHAR(20) NOT NULL,
     adresse_id INT NOT NULL,
     -- Referentielle Integrität - die automatische Benennung "ibfk_1" wird vermeidet durch die explizite Benennung der FK-Constraint.
@@ -57,36 +57,48 @@ CREATE TABLE kunde (
     CONSTRAINT fk_kunde_adresse
         FOREIGN KEY (adresse_id) REFERENCES adresse (adresse_id) 
         ON DELETE RESTRICT 
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE geraetetyp (
     geraetetyp_id INT AUTO_INCREMENT PRIMARY KEY,
     preis_pro_tag DECIMAL(10, 2) NOT NULL,
-    geraetetyp_bezeichnung VARCHAR(100) NOT NULL
-) ENGINE=InnoDB;
+    geraetetyp_bezeichnung VARCHAR(64) NOT NULL
+);
 
 CREATE TABLE geraet_modell (
     geraet_modell_id INT AUTO_INCREMENT PRIMARY KEY,
-    geraet_bezeichnung VARCHAR(100) NOT NULL,
+    geraet_bezeichnung VARCHAR(64) NOT NULL,
     geraetetyp_id INT NOT NULL,
     -- Referentielle Integrität auch hier also als standartmäßige Praxis
     CONSTRAINT fk_modell_typ
         FOREIGN KEY (geraetetyp_id) REFERENCES geraetetyp (geraetetyp_id) 
         ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
+
+CREATE TABLE item_zustand (
+    item_zustand_id INT AUTO_INCREMENT PRIMARY KEY,
+    item_zustand_bezeichnung VARCHAR(20) NOT NULL UNIQUE
+);
 
 CREATE TABLE geraet_item (
     geraet_item_id INT AUTO_INCREMENT PRIMARY KEY,
     geraete_nr VARCHAR(20) NOT NULL UNIQUE,
-    sn_nr VARCHAR(100) NOT NULL UNIQUE,
-    item_zustand VARCHAR(20) NOT NULL DEFAULT 'verfügbar',
+    serial_nr VARCHAR(64) NOT NULL UNIQUE,
     anschaffungsdatum DATE,
+    item_zustand_id INT NOT NULL,
     geraet_modell_id INT NOT NULL,
+    CONSTRAINT fk_geraet_zustand
+        FOREIGN KEY (item_zustand_id) REFERENCES item_zustand (item_zustand_id)
+        ON DELETE RESTRICT,
     CONSTRAINT fk_item_modell
         FOREIGN KEY (geraet_modell_id) REFERENCES geraet_modell (geraet_modell_id) 
-        ON DELETE RESTRICT,
-    CONSTRAINT chk_item_zustand CHECK (item_zustand IN ('verfügbar', 'defekt', 'wartung', 'vermietet'))
-) ENGINE=InnoDB;
+        ON DELETE RESTRICT
+);
+
+CREATE TABLE reservierung_zustand (
+    reservierung_zustand_id INT AUTO_INCREMENT PRIMARY KEY,
+    res_zustand_bezeichnung VARCHAR(20) NOT NULL UNIQUE
+);
 
 CREATE TABLE reservierung (
     reservierung_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -94,15 +106,19 @@ CREATE TABLE reservierung (
     reservierung_hash VARCHAR(64) NOT NULL UNIQUE,
     -- Arbeitet mit UTC-Zeit, wie an anfangs besprochen (SET time_zone = '+00:00';)
     datum TIMESTAMP NOT NULL,
-    adresse_id INT NOT NULL,
+    reservierung_zustand_id INT NOT NULL,
     kunde_id INT NOT NULL,
-    CONSTRAINT fk_res_adresse
-        FOREIGN KEY (adresse_id) REFERENCES adresse (adresse_id) 
+    adresse_id INT NOT NULL,
+    CONSTRAINT fk_res_zustand
+        FOREIGN KEY (reservierung_zustand_id) REFERENCES reservierung_zustand (reservierung_zustand_id)
         ON DELETE RESTRICT,
     CONSTRAINT fk_res_kunde
         FOREIGN KEY (kunde_id) REFERENCES kunde (kunde_id) 
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_res_adresse
+        FOREIGN KEY (adresse_id) REFERENCES adresse (adresse_id) 
         ON DELETE RESTRICT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE position (
     position_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -122,4 +138,4 @@ CREATE TABLE position (
     CONSTRAINT fk_respos_res
         FOREIGN KEY (reservierung_id) REFERENCES reservierung (reservierung_id) 
         ON DELETE CASCADE 
-) ENGINE=InnoDB;
+);
