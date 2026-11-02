@@ -1,3 +1,9 @@
+= Use Case Diagram
+
+:kroki-server-url: https://kroki.io
+
+[plantuml, use-case-diagram, png]
+----
 @startuml UseCaseDiagram
 left to right direction
 
@@ -5,7 +11,7 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam packageStyle rectangle
 
-actor Teilnehmer
+actor App
 actor Mitarbeiter
 actor Administrator
 
@@ -14,9 +20,9 @@ rectangle "Reservierungssystem" {
   usecase "Verfügbarkeit prüfen" as UC1
   usecase "Gerät reservieren" as UC2
   usecase "Reservierungen einsehen" as UC3
-  usecase "Reservierung stornieren / ändern" as UC4
+  usecase "Reservierung stornieren" as UC4
+  usecase "Reservierung ändern" as UC5
 
-  usecase "Reservierungen verwalten" as UC5
   usecase "Gerätezustand ändern" as UC6
   usecase "Geräte verwalten" as UC7
   usecase "Preise verwalten" as UC8
@@ -27,11 +33,15 @@ rectangle "Reservierungssystem" {
   usecase "System administrieren" as UC12
 }
 
-Teilnehmer -- UC2
-Teilnehmer -- UC3
+App -- UC2
+App -- UC3
+App -- UC4
+App -- UC5
 
 UC2 ..> UC1 : <<include>>
-UC4 ..> UC3 : <<extend>>
+UC3 ..> UC4 : <<extend>>
+UC3 ..> UC5 : <<extend>>
+UC5 ..> UC1 : <<include>>
 
 Mitarbeiter -- UC5
 Mitarbeiter -- UC6
@@ -43,12 +53,15 @@ Administrator -- UC10
 Administrator -- UC11
 Administrator -- UC12
 
-Teilnehmer --> Mitarbeiter
-Mitarbeiter --> Administrator
+Mitarbeiter --|> App
+Administrator --|> Mitarbeiter
 
 note left of UC3
-Teilnehmer -> nur eigene Reservierungen.
+App -> nur eigene Reservierungen.
 Mitarbeiter -> sieht alle Reservierungen.
 end note
 
 @enduml
+
+----
+
