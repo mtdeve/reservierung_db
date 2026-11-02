@@ -1,0 +1,20 @@
+/*
+ * Copyright (C) 2026 mtdeve
+ * This project is licensed under the GNU Affero General Public License v3.0.
+ * See the LICENSE file in the project root for more information.
+ */
+
+CREATE USER IF NOT EXISTS 'db_admin'@'localhost'
+IDENTIFIED BY 'CHANGE_ME_ADMIN';
+
+CREATE USER IF NOT EXISTS 'reservation_app'@'localhost'
+IDENTIFIED BY 'CHANGE_ME_APP';
+
+GRANT 'admin_role' TO 'db_admin'@'localhost';
+GRANT 'app_role' TO 'reservation_app'@'localhost';
+
+SET DEFAULT ROLE 'admin_role'
+TO 'db_admin'@'localhost';
+
+SET DEFAULT ROLE 'app_role'
+TO 'reservation_app'@'localhost';

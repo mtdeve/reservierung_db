@@ -1,10 +1,8 @@
-# .gitignore
+mysql_credentials.cnf
+*create_users.sql
 
-# Credentials
-scripts/mysql_credentials.cnf
+draft/
 
-# Eventuell locale backup
 *.sql.bak
 
-# AI
 .agents

@@ -1,3 +1,7 @@
+:kroki-server-url: https://kroki.io
+
+[plantuml, svg]
+----
 @startuml ERDiagram
 top to bottom direction
 hide circle
@@ -126,3 +130,5 @@ legend bottom
 endlegend
 
 @enduml
+
+----
