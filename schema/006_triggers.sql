@@ -4,27 +4,12 @@
  * See the LICENSE file in the project root for more information.
  */
 
--- ============================================================
--- SKRIPT:      006_triggers.sql
--- PROJEKT:     Reservierung DB
--- ZIELSETZUNG: Automatische Validierung und Audit-Protokollierung
--- ============================================================
 USE reservierung_db;
-/*!40101 SET NAMES utf8mb4 */;
 
 DELIMITER //
 
--- ============================================================
--- TRIGGER:   trg_validate_dates_insert
--- TABELLE:   reservierungsposition
--- EREIGNIS:  BEFORE INSERT
--- ZWECK:     Verhindert Reservierungen mit einem Startdatum
---            in der Vergangenheit. Schützt auch vor direkten
---            INSERT-Anweisungen außerhalb der Prozedur.
---            Zweite niveau Absicherung.
--- ============================================================
 CREATE TRIGGER trg_validate_dates_insert
-BEFORE INSERT ON reservierungsposition
+BEFORE INSERT ON position
 FOR EACH ROW
 BEGIN
     IF NEW.von_datum < CURDATE() THEN
@@ -33,18 +18,8 @@ BEGIN
     END IF;
 END //
 
--- ============================================================
--- TRIGGER:   trg_prevent_overlap_insert
--- TABELLE:   reservierungsposition
--- EREIGNIS:  BEFORE INSERT
--- ZWECK:     Verhindert Doppelbuchungen eines Geräts durch
---            direkte INSERT-Anweisungen, welche die
---            Geschäftsprozedur umgehen. Die Verfügbarkeit wird
---            über die Funktion fn_ist_item_verfuegbar geprüft.
--- HINWEIS:   MySQL 8.0+ erlaubt mehrere Trigger pro Ereignis.
--- ============================================================
 CREATE TRIGGER trg_prevent_overlap_insert
-BEFORE INSERT ON reservierungsposition
+BEFORE INSERT ON position
 FOR EACH ROW
 BEGIN
     IF fn_ist_item_verfuegbar(
@@ -58,26 +33,20 @@ BEGIN
     END IF;
 END //
 
--- ============================================================
--- TRIGGER:   trg_prevent_overlap_update
--- TABELLE:   reservierungsposition
--- EREIGNIS:  BEFORE UPDATE
--- ZWECK:     Verhindert Überschneidungen bei Änderungen
---            einer bestehenden Reservierung.
--- ============================================================
+
 CREATE TRIGGER trg_prevent_overlap_update
-BEFORE UPDATE ON reservierungsposition
+BEFORE UPDATE ON position
 FOR EACH ROW
 BEGIN
     DECLARE v_konflikte INT;
 
     -- desselben Items - schließt die aktuelle Zeile aus (OLD.id)
     SELECT COUNT(*) INTO v_konflikte
-    FROM reservierungsposition rp
+    FROM position rp
     WHERE rp.geraet_item_id = NEW.geraet_item_id
       AND rp.von_datum      <= NEW.bis_datum
       AND rp.bis_datum      >= NEW.von_datum
-      AND rp.reservierungsposition_id != OLD.reservierungsposition_id;
+      AND rp.position_id != OLD.position_id;
 
     IF v_konflikte > 0 THEN
         SIGNAL SQLSTATE '45000'
@@ -85,13 +54,7 @@ BEGIN
     END IF;
 END //
 
--- ============================================================
--- TRIGGER:   trg_audit_reservierung_insert
--- TABELLE:   reservierung
--- EREIGNIS:  AFTER INSERT
--- ZWECK:     Protokolliert das Erstellen einer Reservierung
---            für die Nachverfolgung und Dokumentation.
--- ============================================================
+
 CREATE TRIGGER trg_audit_reservierung_insert
 AFTER INSERT ON reservierung
 FOR EACH ROW
@@ -122,13 +85,6 @@ BEGIN
 
 END //
 
--- ============================================================
--- TRIGGER:   trg_audit_reservierung_update
--- TABELLE:   reservierung
--- EREIGNIS:  AFTER UPDATE
--- ZWECK:     Protokolliert Änderungen einer Reservierung
---            zur Nachverfolgung der Datenänderungen.
--- ============================================================
 CREATE TRIGGER trg_audit_reservierung_update
 AFTER UPDATE ON reservierung
 FOR EACH ROW
@@ -164,13 +120,7 @@ BEGIN
 
 END //
 
--- ============================================================
--- TRIGGER:   trg_audit_reservierung_delete
--- TABELLE:   reservierung
--- EREIGNIS:  AFTER DELETE
--- ZWECK:     Protokolliert das Löschen einer Reservierung
---            für die vollständige Historie.
--- ============================================================
+
 CREATE TRIGGER trg_audit_reservierung_delete
 AFTER DELETE ON reservierung
 FOR EACH ROW
@@ -201,13 +151,7 @@ BEGIN
 
 END //
 
--- ============================================================
--- TRIGGER:   trg_audit_kunde_insert
--- TABELLE:   kunde
--- EREIGNIS:  AFTER INSERT
--- ZWECK:     Protokolliert das Erstellen eines Kunden
---            zur Dokumentation personenbezogener Daten.
--- ============================================================
+
 CREATE TRIGGER trg_audit_kunde_insert
 AFTER INSERT ON kunde
 FOR EACH ROW
@@ -240,13 +184,7 @@ BEGIN
 
 END //
 
--- ============================================================
--- TRIGGER:   trg_audit_kunde_update
--- TABELLE:   kunde
--- EREIGNIS:  AFTER UPDATE
--- ZWECK:     Protokolliert Änderungen an Kundendaten
---            für Transparenz und DSGVO-Konformität.
--- ============================================================
+
 CREATE TRIGGER trg_audit_kunde_update
 AFTER UPDATE ON kunde
 FOR EACH ROW
@@ -285,13 +223,7 @@ BEGIN
     );
 END //
 
--- ============================================================
--- TRIGGER:   trg_audit_kunde_delete
--- TABELLE:   kunde
--- EREIGNIS:  AFTER DELETE
--- ZWECK:     Protokolliert das Löschen eines Kunden
---            gemäß der Nachweispflicht der Datenverwaltung.
--- ============================================================
+
 CREATE TRIGGER trg_audit_kunde_delete
 AFTER DELETE ON kunde
 FOR EACH ROW
@@ -323,13 +255,7 @@ BEGIN
     );
 END //
 
--- ============================================================
--- TRIGGER:   trg_audit_geraet_item_update
--- TABELLE:   geraet_item
--- EREIGNIS:  AFTER UPDATE
--- ZWECK:     Protokolliert Änderungen des Gerätezustands
---            für die Kontrolle der Verfügbarkeit.
--- ============================================================
+
 CREATE TRIGGER trg_audit_geraet_item_update
 AFTER UPDATE ON geraet_item
 FOR EACH ROW

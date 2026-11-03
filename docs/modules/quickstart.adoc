@@ -1,0 +1,47 @@
+= Quick Start
+Execute the following steps to initialize the local database environment.
+
+== Prerequisites
+* MySQL Server 8.0 or higher
+* MySQL Client installed CLI-accessible
+* Administrator privileges (root or equivalent) required for initialization.
+
+== Configuration
+. Copy the example configuration files:
++
+[source,bash]
+----
+cp deployment/mysql_credentials.cnf.example deployment/mysql_credentials.cnf
+
+cp data/100_create_users.sql.template data/100_create_users.sql
+----
+
+. Open `deployment/mysql_credentials.cnf` and replace all default credentials with your local values.
+
+. Open  `data/100_create_users.sql`
+
+== Database Initialization
+. Run the script located into `./deployement/00_rundb.ps1` from the repository root, or the relative file under `deployment/Linux/` on Linux systems.
+
+
+
+[NOTE]
+====
+If the command window closes immediately or throws an error, make sure no other service
+is occupying port `3306` before re-running `00_rundb.ps1` or linux relative file.
+====
+
+
+[NOTE]
+====
+This script executes the numbered SQL files under `schema/` in order.
+The first script (`000_create_database.sql`).
+It set `SET PERSIST event_scheduler = ON`, which persists across server restarts. this will effect the whole mysql
+====
+
+== Connection Parameters
+Once the script completes, connect to the database using the following default credentials:
+
+
+
+-- here will be added info to the messages of the CLI and aventually to run the file that is not yet created verify_installation.ps1 and relative for Linux. questo commento va corretto il senso è giusto. ma in produzione va inserito  

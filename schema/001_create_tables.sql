@@ -4,35 +4,23 @@
  * See the LICENSE file in the project root for more information.
  */
 
--- ============================================================
--- SKRIPT:      001_create_tables.sql
--- PROJEKT:     Reservierung DB
--- ZIELSETZUNG: Definition der Tabellenstrukturen und Relationen
--- ============================================================
--- ============================================================
--- AUDIT-DATENBANK
--- Separate Datenbank für DSGVO-konforme Protokollierung
--- Wird NICHT gelöscht beim Zurücksetzen der Hauptdatenbank
--- ============================================================
+-- Änderungsprotokoll, getrennt von den Anwendungsdaten
 USE reservierung_audit_db;
-/*!40101 SET NAMES utf8mb4 */; 
 
-CREATE TABLE IF NOT EXISTS audit_log (
+CREATE TABLE audit_log (
     audit_id     INT AUTO_INCREMENT PRIMARY KEY,
-    tabelle      VARCHAR(64)  NOT NULL,             -- betroffene Tabelle
-    operation    VARCHAR(10)  NOT NULL,             -- INSERT, UPDATE oder DELETE
-    datensatz_id INT          NOT NULL,             -- ID des betroffenen Datensatzes
-    wert_vorher  TEXT,                              -- Wert vor der Änderung
-    wert_nachher TEXT,                              -- Wert nach der Änderung
-    benutzer     VARCHAR(64),                      -- angemeldeter Datenbankbenutzer
-    zeitstempel  TIMESTAMP    DEFAULT NOW()         -- Zeitpunkt der Änderung (UTC)
+    tabelle      VARCHAR(64)  NOT NULL,
+    operation    VARCHAR(10)  NOT NULL,
+    datensatz_id INT          NOT NULL,
+    wert_vorher  TEXT,
+    wert_nachher TEXT,
+    benutzer     VARCHAR(64),
+    zeitstempel  TIMESTAMP    DEFAULT NOW()
 );
 
--- ============================================================
--- HAUPTDATENBANK
--- HINWEIS: "SIGNED" (als default) auf alle Werte stellen. Es vermeidet Kompatibilitätsprobleme 
+
+-- "SIGNED" (als default) auf alle Werte stellen. Es vermeidet Kompatibilitätsprobleme 
 -- mit den Datenbanksystemen und frameworks. Es bleiben 2^31 Ziffern übrig.
--- ============================================================
 USE reservierung_db;
 
 CREATE TABLE adresse (
@@ -83,7 +71,7 @@ CREATE TABLE item_zustand (
 CREATE TABLE geraet_item (
     geraet_item_id INT AUTO_INCREMENT PRIMARY KEY,
     geraete_nr VARCHAR(20) NOT NULL UNIQUE,
-    serial_nr VARCHAR(64) NOT NULL UNIQUE,
+    serien_nr VARCHAR(64) NOT NULL UNIQUE,
     anschaffungsdatum DATE,
     item_zustand_id INT NOT NULL,
     geraet_modell_id INT NOT NULL,
@@ -97,7 +85,7 @@ CREATE TABLE geraet_item (
 
 CREATE TABLE reservierung_zustand (
     reservierung_zustand_id INT AUTO_INCREMENT PRIMARY KEY,
-    res_zustand_bezeichnung VARCHAR(20) NOT NULL UNIQUE
+    reservierung_zustand_bezeichnung VARCHAR(20) NOT NULL UNIQUE
 );
 
 CREATE TABLE reservierung (
@@ -122,7 +110,7 @@ CREATE TABLE reservierung (
 
 CREATE TABLE position (
     position_id INT AUTO_INCREMENT PRIMARY KEY,
-    position_nr INT NOT NULL UNIQUE,
+    position_nr INT NOT NULL,
     pos_preis_pro_tag DECIMAL(10, 2) NOT NULL,
     -- Absoluter Datentyp für die Tagespreise
     -- SIGNED (als default) Kompatibilitätsprobleme mit den Datenbanksystemen vermeidet; es bleiben 2^31 Ziffern übrig.
