@@ -1,8 +1,16 @@
 mysql_credentials.cnf
 *create_users.sql
 
-draft/
+# secrets
+mysql_credentials.cnf
+100_create_users.sql
+.env
 
 *.sql.bak
 
 .agents
+AGENTS.md
+
+# draft Ordner
+draft
+tests

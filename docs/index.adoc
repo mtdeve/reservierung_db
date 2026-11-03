@@ -1,0 +1,46 @@
+= Reservierung_db: Official Documentation
+mtdeve <https://github.com/mtdeve>
+:revnumber: 0.1.0 (snapshot)
+:lang: en
+:doctype: book
+:toc: right
+:toclevels: 4
+:toc-title: Table of Contents
+:sectnums:
+:imagesdir: ./img
+:data-uri:
+:icons: font
+:source-highlighter: highlight.js
+:kroki-server-url: https://kroki.io
+:kroki-fetch-diagrams:
+
+image::logo_db.svg[Project Logo, 360 ,align=center]
+
+== Introduction
+This project is a collection of some of my earliest Python exercises, originally written in 2015.
+
+It was never intended to become a production-ready library. Instead, it served as a personal playground where I explored the fundamentals of combinatorics, factorials, permutations, and other mathematical concepts while learning Python.
+
+Most of these exercises were inspired by my personal studies, mathematics books, and educational videos that I followed in my spare time.
+
+In 2026, during my professional retraining in the IT field, I decided to create a repository for this old project, clean up the original code, and add some documentation. The purpose is to preserve them as a small collection of my first steps with Python. The original ideas and implementations have been mostly kept unchanged, including some mistakes and limitations that are part of the learning process.
+
+The command-line interface has also been recently added in 2026 and is intentionally kept as simple as possible. It may be improved over time as the project is further studied and developed.
+
+include::modules/quickstart.adoc[leveloffset=+1]
+include::modules/usage.adoc[leveloffset=+1]
+include::modules/architecture.adoc[leveloffset=+1]
+include::modules/data_dictionary.adoc[leveloffset=+1]
+
+
+
+
+== References and acknowledgements
+* The mathematical concepts explored in this project were learned through personal study, including the educational videos by Italian mathematics educator Elia Bombardelli.
+
+* The mathematical details of the binomial coefficient are available on
+https://en.wikipedia.org/wiki/Binomial_coefficient[Wikipedia].
+
+== License
+Distributed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+See the link:../LICENSE[LICENSE] file for details.

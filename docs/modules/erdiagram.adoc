@@ -1,0 +1,98 @@
+= Entity Relationship Diagram
+
+[mermaid]
+....
+erDiagram
+    direction LR
+
+    audit_log {
+        int audit_id PK
+        varchar tabelle
+        varchar operation
+        int datensatz_id
+        text wert_vorher
+        text wert_nachher
+        varchar benutzer
+        timestamp zeitstempel
+    }
+
+    adresse {
+        int adresse_id PK
+        varchar strasse
+        varchar haus_nr
+        varchar adresse_zusatz
+        varchar plz
+        varchar ort
+    }
+
+    kunde {
+        int kunde_id PK
+        varchar kunden_nr UK
+        varchar nachname
+        varchar vorname
+        varchar email
+        varchar telefon
+        int adresse_id FK
+    }
+
+    geraetetyp {
+        int geraetetyp_id PK
+        decimal preis_pro_tag
+        varchar geraetetyp_bezeichnung
+    }
+
+    geraet_modell {
+        int geraet_modell_id PK
+        varchar geraet_bezeichnung
+        int geraetetyp_id FK
+    }
+
+    item_zustand {
+        int item_zustand_id PK
+        varchar item_zustand_bezeichnung UK
+    }
+
+    geraet_item {
+        int geraet_item_id PK
+        varchar geraete_nr UK
+        varchar serial_nr UK
+        date anschaffungsdatum
+        int item_zustand_id FK
+        int geraet_modell_id FK
+    }
+
+    reservierung_zustand {
+        int reservierung_zustand_id PK
+        varchar reservierung_zustand_bezeichnung UK
+    }
+
+    reservierung {
+        int reservierung_id PK
+        varchar reservierung_nr UK
+        varchar reservierung_hash UK
+        timestamp datum
+        int reservierung_zustand_id FK
+        int kunde_id FK
+        int adresse_id FK
+    }
+
+    position {
+        int position_id PK
+        int position_nr UK
+        decimal pos_preis_pro_tag
+        date von_datum
+        date bis_datum
+        int geraet_item_id FK
+        int reservierung_id FK
+    }
+
+    adresse ||--o{ kunde : "1:N"
+    adresse ||--o{ reservierung : "1:N"
+    kunde ||--o{ reservierung : "1:N"
+    reservierung ||--|{ position : "1:N"
+    geraet_item ||--o{ position : "1:N"
+    geraet_modell ||--o{ geraet_item : "1:N"
+    geraetetyp ||--o{ geraet_modell : "1:N"
+    item_zustand ||--o{ geraet_item : "1:N"
+    reservierung_zustand ||--o{ reservierung : "1:N"
+....
